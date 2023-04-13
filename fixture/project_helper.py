@@ -9,7 +9,8 @@ class ProjectHelper():
 
     def open_manage_page(self):
         wd = self.app.wd
-        self.app.open_home_page()
+        self.app.session.login("administrator", "root")
+        wd.get ('http://localhost/mantisbt-1.2.20/my_view_page.php')
         wd.find_element_by_link_text("Manage").click()
         wd.find_element_by_css_selector('input[type="submit"]').click()
         wd.find_element_by_link_text("Manage Projects").click()
@@ -45,11 +46,11 @@ class ProjectHelper():
         wd.find_element_by_css_selector("input[value='%s']" %id).click()
     def delete_project(self, project):
         wd = self.app.wd
+        #self.app.session.login("administrator", "root")
         self.open_manage_page()
         wd.find_element_by_link_text("%s" %project.name).click()
         wd.find_element(By.CSS_SELECTOR, "[value='Delete Project']" ).click()
         wd.find_element(By.CSS_SELECTOR, "[value='Delete Project']").click()
-
         self.group_cache = None
 
 

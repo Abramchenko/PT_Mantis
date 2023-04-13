@@ -21,6 +21,6 @@ class MailHelper:
                         pop.quit()
                     return msg.get_payload()
             pop.close()
-            time.sleep(3)   #итого ждем 5 раз по 3сек
+            time.sleep(6)   #итого ждем 5 раз по 3сек
         return None
                 
