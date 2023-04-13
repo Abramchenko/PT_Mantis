@@ -15,6 +15,7 @@ class SessionHelper():
 
     def logout(self):
         wd = self.app.wd
+
         wd.find_element_by_link_text("Logout").click()
 
     def ensure_login(self, username, password):
@@ -34,7 +35,7 @@ class SessionHelper():
 
     def is_logged_in(self):
         wd = self.app.wd
-        return len(wd.find_elements_by_name("logout"))>0
+        return len(wd.find_elements_by_link_text("Logout"))>0
 #
 
     def is_logged_in_as(self, username):

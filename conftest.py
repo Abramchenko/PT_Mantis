@@ -1,3 +1,5 @@
+import ftputil
+
 from fixture.application import Application
 from fixture.orm import ORMFixture
 import pytest
@@ -21,22 +23,22 @@ def orm():
     return ormfixture
 
 @pytest.fixture
-def app(request):
+def app(request, config):
     global fixture
     browser = request.config.getoption("--browser")
-    web_config = load_config(request.config.getoption("--target"))["web"]
-    web_admin = load_config(request.config.getoption("--target"))["webadmin"]
     if fixture is None or not fixture.is_valid(): # если что, перезапустить фикстуру
-        fixture = Application(browser=browser, base_url= web_config["base_url"])
-    fixture.session.login(username=web_admin["username"], password=web_admin["password"])
+        fixture = Application(browser=browser, config = config)
     return fixture
 
-# такая фикстура выполняется один раз, в конце
+@pytest.fixture(scope="session") # эта фикстура будет использоваться другими фикстурами
+def config(request):
+    return load_config(request.config.getoption("--target"))
 
+# такая фикстура выполняется один раз, в конце
 @pytest.fixture(scope="session", autouse=True) # нигде не используется
 def stop(request):
     def fin():
-        fixture.session.logout()
+        fixture.session.ensure_logout()
         fixture.destroy()
     request.addfinalizer(fin)
     return fixture
@@ -46,7 +48,25 @@ def pytest_addoption(parser):
     parser.addoption("--browser", action="store", default="firefox")
     parser.addoption("--target", action="store", default="target.json")
 
+@pytest.fixture(scope="session", autouse=True)
+def configer_server (request, config):
+    install_server_configuration(config['ftp']['host'], config['ftp']['username'], config['ftp']['password'])
+    def fin():
+        restore_server_configuration(config['ftp']['host'], config['ftp']['username'], config['ftp']['password'])
+    request.addfinalizer(fin)
 
+def install_server_configuration(host, username, password):
+    with ftputil.FTPHost(host, username, password) as remote:
+        if remote.path.isfile("config_inc.php.bak"):
+            remote.remove("config_inc.php.bak")
+        if remote.path.isfile("config_inc.php"):
+            remote.rename("config_inc.php", "config_inc.php.bak")
+        remote.upload(os.path.join(os.path.dirname(__file__), "resources/config_inc.php"), "config_inc.php")
 
-
+def restore_server_configuration(host, username, password):
+    with ftputil.FTPHost(host, username, password) as remote:
+        if remote.path.isfile("config_inc.php.bak"):
+            if remote.path.isfile("config_inc.php"):
+                remote.remove("config_inc.php")
+            remote.rename("config_inc.php.bak", "config_inc.php")
 
